@@ -1,7 +1,11 @@
 [package]
 name = "mrdu"
 version = "0.1.0"
+authors = ["Muxiner <muxinerhuang@gmail.com>"]
 edition = "2021"
+readme = "README.md"
+description = "A simple command line disk analysis tool."
+repository = "https://github.com/Muxiner/mrdu"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
