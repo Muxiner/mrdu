@@ -71,25 +71,15 @@ impl DisplayItemInfo {
         }
     }
 
-    fn add_item(&self, occupied_size: f64) -> Self {
+    fn add_item(&self, occupied_size: f64, is_last: bool) -> Self {
         Self {
             occupied_size,
             dir_level: self.dir_level + 1,
-            is_last: false,
+            is_last,
             indents_size: self.indents_size.clone() + self.display_indent() + &String::from("  "),
         }
     }
-
-    /// may be could become add_item(&self, occupied: f63, is_last: bool) -> Self {}
-    fn add_last_item(&self, occupied_size: f64) -> Self {
-        Self {
-            occupied_size,
-            dir_level: self.dir_level + 1,
-            is_last: true,
-            indents_size: self.indents_size.clone() + self.display_indent() + &String::from("  "),
-        }
-    }
-
+    
     fn display_indent(&self) -> &'static str {
         if self.is_last {
             "  "
@@ -181,13 +171,13 @@ fn show_disk_analyze_result(
 
             if let Some((last_chlid, children)) = children.split_last() {
                 for &(child, occupied_size) in children.iter() {
-                    show_disk_analyze_result(child, config, &info.add_item(occupied_size), buffer)?;
+                    show_disk_analyze_result(child, config, &info.add_item(occupied_size, false), buffer)?;
                 }
                 let &(child, occupied_size) = last_chlid;
                 show_disk_analyze_result(
                     child,
                     config,
-                    &info.add_last_item(occupied_size),
+                    &info.add_item(occupied_size, true),
                     buffer,
                 )?;
             }
