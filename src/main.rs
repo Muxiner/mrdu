@@ -103,18 +103,18 @@ impl DisplayItemInfo {
     }
 
     fn display_color(&self) -> Option<Color> {
-        if self.dir_level == 1 {
-            Some(Color::Rgb(255, 36, 0))
-        // } else if self.dir_level == 1 {
-        //     Some(Color::Green)
-        // } else if self.dir_level == 2 {
-        //     Some(Color::Green)
+        if self.dir_level == 0 {
+            // Analyzed root directory, Purple
+            Some(Color::Rgb(150, 50, 200))
         } else if self.occupied_size >= 50.0 {
-            Some(Color::Red)
-        // } else if self.occupied_size >= 10.0 && self.occupied_size < 50.0 {
-        //     Some(Color::Yellow)
+            // Directories or files that occupied >= 50%, Red
+            Some(Color::Rgb(255, 100, 100))
+        } else if self.occupied_size >= 10.0 && self.occupied_size < 50.0 {
+            // Directories or files that occupied < 50.0% && >= 10.0%, Yellow
+            Some(Color::Rgb(255, 222, 72))
         } else {
-            Some(Color::Blue)
+            // Directories or files that occupied < 10.0%, Green
+            Some(Color::Rgb(100, 255, 90))
         }
     }
 }
