@@ -76,10 +76,22 @@ impl DisplayItemInfo {
             occupied_size,
             dir_level: self.dir_level + 1,
             is_last,
-            indents_size: self.indents_size.clone() + self.display_indent() + &String::from("  "),
+            indents_size: self.indents_size.clone() + self.display_prefix_indent(false) + &String::from("  "),
         }
     }
 
+    fn display_prefix_indent(&self, is_prefix: bool) -> &'static str {
+        match self.is_last {
+            true => match is_prefix {
+                true => tree_shape::LAST_LEAF,
+                false => "  ",
+            },
+            false => match is_prefix {
+                true => tree_shape::LEAF,
+                false => tree_shape::BRANCH,
+            }
+        }
+    }
     fn display_indent(&self) -> &'static str {
         if self.is_last {
             "  "
@@ -200,7 +212,7 @@ fn show_item_disk_analyze(
 ) -> io::Result<()> {
     // Indentation
     buffer.set_color(ColorSpec::new().set_fg(INDENT_COLOR))?;
-    write!(buffer, "{}{}", info.indents_size, info.display_prefix())?;
+    write!(buffer, "{}{}", info.indents_size, info.display_prefix_indent(true))?;
     // Percentage
     buffer.set_color(ColorSpec::new().set_fg(info.display_color(false)))?;
     write!(
