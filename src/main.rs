@@ -92,21 +92,6 @@ impl DisplayItemInfo {
             }
         }
     }
-    fn display_indent(&self) -> &'static str {
-        if self.is_last {
-            "  "
-        } else {
-            tree_shape::BRANCH
-        }
-    }
-
-    fn display_prefix(&self) -> &'static str {
-        if self.is_last {
-            tree_shape::LAST_LEAF
-        } else {
-            tree_shape::LEAF
-        }
-    }
 
     fn display_color(&self, is_disk_size: bool) -> Option<Color> {
         let darken = |x: u8| (x as f32 * 0.5).round() as u8;
