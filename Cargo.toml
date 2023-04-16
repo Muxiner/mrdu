@@ -11,3 +11,15 @@ repository = "https://github.com/Muxiner/mrdu"
 
 [dependencies]
 structopt = "0.3.26"
+termcolor = "1.1.2"
+rayon = "1.5.1"
+atty = "0.2.14"
+pretty-bytes = "0.2.2"
+serde = { version = "1.0.131", features = ["derive"] }
+
+[target.'cfg(windows)'.dependencies]
+winapi-util = "0.1.2"
+
+[target.'cfg(windows)'.dependencies.winapi]
+version = "0.3.7"
+features = ["winerror"]
