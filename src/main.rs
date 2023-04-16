@@ -72,7 +72,7 @@ impl DisplayItemInfo {
             occupied_size,
             dir_level: self.dir_level + 1,
             is_last: false,
-            indents_size: self.indents_size.clone() + &self.indents_size + &String::from(" "),
+            indents_size: self.indents_size.clone() + self.display_indent() + &String::from("  "),
         }
     }
 
@@ -82,13 +82,13 @@ impl DisplayItemInfo {
             occupied_size,
             dir_level: self.dir_level + 1,
             is_last: true,
-            indents_size: self.indents_size.clone() + &self.indents_size + &String::from(" "),
+            indents_size: self.indents_size.clone() + self.display_indent() + &String::from("  "),
         }
     }
 
     fn display_indent(&self) -> &'static str {
         if self.is_last {
-            " "
+            "  "
         } else {
             tree_shape::BRANCH
         }
