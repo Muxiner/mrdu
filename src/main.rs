@@ -79,7 +79,7 @@ impl DisplayItemInfo {
             indents_size: self.indents_size.clone() + self.display_indent() + &String::from("  "),
         }
     }
-    
+
     fn display_indent(&self) -> &'static str {
         if self.is_last {
             "  "
@@ -97,25 +97,25 @@ impl DisplayItemInfo {
     }
 
     fn display_color(&self, is_disk_size: bool) -> Option<Color> {
-        let as_u8 = |x: u8| (x as f32 * 0.5).round() as u8;
-        let darken = |r: u8, g: u8, b: u8| {
+        let darken = |x: u8| (x as f32 * 0.5).round() as u8;
+        let get_color = |r: u8, g: u8, b: u8| {
             if is_disk_size {
-                Color::Rgb(as_u8(r), as_u8(g), b)
+                Color::Rgb(darken(r), darken(g), b)
             } else {
                 Color::Rgb(r, g, b)
             }
         };
         match self.dir_level {
             // Analyzed root directory, Purple
-            0 => Some(darken(250, 250, 250)),
+            0 => Some(get_color(250, 250, 250)),
             // Directories or files that occupied >= 50%, Red
-            _ if self.occupied_size >= 50.0 => Some(darken(255, 100, 100)),
+            _ if self.occupied_size >= 50.0 => Some(get_color(255, 100, 100)),
             // Directories or files that occupied < 50.0% && >= 10.0%, Yellow
             _ if self.occupied_size >= 10.0 && self.occupied_size < 50.0 => {
-                Some(darken(255, 222, 72))
+                Some(get_color(255, 222, 72))
             }
             // Directories or files that occupied < 10.0%, Green
-            _ => Some(darken(100, 255, 90)),
+            _ => Some(get_color(100, 255, 90)),
         }
     }
 }
