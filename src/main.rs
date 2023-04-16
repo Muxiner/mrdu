@@ -61,7 +61,7 @@ impl DisplayItemInfo {
     fn new() -> Self {
         Self {
             occupied_size: 100.0,
-            dir_level: 1,
+            dir_level: 0,
             is_last: true,
             indents_size: String::new(),
         }
@@ -103,18 +103,18 @@ impl DisplayItemInfo {
     }
 
     fn display_color(&self) -> Option<Color> {
-        if self.dir_level == 0 {
-            Some(Color::Green)
-        } else if self.dir_level == 1 {
-            Some(Color::Green)
-        } else if self.dir_level == 2 {
-            Some(Color::Green)
+        if self.dir_level == 1 {
+            Some(Color::Rgb(255, 36, 0))
+        // } else if self.dir_level == 1 {
+        //     Some(Color::Green)
+        // } else if self.dir_level == 2 {
+        //     Some(Color::Green)
         } else if self.occupied_size >= 50.0 {
             Some(Color::Red)
-        } else if self.occupied_size >= 10.0 && self.occupied_size < 50.0 {
-            Some(Color::Yellow)
+        // } else if self.occupied_size >= 10.0 && self.occupied_size < 50.0 {
+        //     Some(Color::Yellow)
         } else {
-            Some(Color::White)
+            Some(Color::Blue)
         }
     }
 }
