@@ -11,7 +11,7 @@ use structopt::StructOpt;
 use termcolor::{Buffer, BufferWriter, Color, ColorChoice, ColorSpec, WriteColor};
 
 #[allow(dead_code)]
-const INDENT_COLOR: Option<Color> = Some(Color::Rgb(75, 75, 75));
+const INDENT_COLOR: Option<Color> = Some(Color::Rgb(147, 147, 147));
 
 // 模块，终端输出树形结构视觉效果
 pub mod tree_shape {
@@ -26,31 +26,28 @@ pub mod tree_shape {
 #[derive(Debug, StructOpt)]
 #[structopt(name = "mrdu", about = "A simple command line disk analysis tool.")]
 struct Arguments {
+    /// Directory that needs to be analyzed
+    /// [default: current path]
     #[structopt(parse(from_os_str))]
-    /// Directory that needs to be analyzed.
-    /// Default: current path
     target_dir: Option<PathBuf>,
 
-    #[structopt(short = "d", default_value = "2")]
     /// Maximum recursion depth in directory.
+    #[structopt(short = "d", long = "max-depth", default_value = "2")]
     max_depth: usize,
 
-    #[structopt(short = "p", default_value = "0.01")]
     /// Threshold that determines if entry is worth being shown.
-    /// Between 0-100 % of dir size.
+    /// Between 0-100%.
+    #[structopt(short = "p", long = "min-percent", default_value = "0.01")]
     min_percent: f64,
 
-    #[structopt(short = "a")]
     /// Apparent size on disk
-    ///
-    /// This would actually retrieve allocation size of files (AKA physical size on disk)
+    // This would actually retrieve allocation size of files (AKA physical size on disk)
+    #[structopt(short = "a", long = "apparent")]
     apparent: bool,
 
-    #[structopt(short = "n")]
     /// Number of decimal places
-    ///
-    /// The number of decimal places occupied by files or folders
-    /// Default: 2 decimal places
+    // The number of decimal places occupied by files or folders.
+    #[structopt(short = "n", long = "precision", default_value = "2")]
     decimal_num: usize,
 }
 
@@ -109,19 +106,26 @@ impl DisplayItemInfo {
         }
     }
 
-    fn display_color(&self) -> Option<Color> {
-        if self.dir_level == 0 {
+    fn display_color(&self, is_disk_size: bool) -> Option<Color> {
+        let as_u8 = |x: u8| (x as f32 * 0.5).round() as u8;
+        let darken = |r: u8, g: u8, b: u8| {
+            if is_disk_size {
+                Color::Rgb(as_u8(r), as_u8(g), b)
+            } else {
+                Color::Rgb(r, g, b)
+            }
+        };
+        match self.dir_level {
             // Analyzed root directory, Purple
-            Some(Color::Rgb(150, 50, 200))
-        } else if self.occupied_size >= 50.0 {
+            0 => Some(darken(250, 250, 250)),
             // Directories or files that occupied >= 50%, Red
-            Some(Color::Rgb(255, 100, 100))
-        } else if self.occupied_size >= 10.0 && self.occupied_size < 50.0 {
+            _ if self.occupied_size >= 50.0 => Some(darken(255, 100, 100)),
             // Directories or files that occupied < 50.0% && >= 10.0%, Yellow
-            Some(Color::Rgb(255, 222, 72))
-        } else {
+            _ if self.occupied_size >= 10.0 && self.occupied_size < 50.0 => {
+                Some(darken(255, 222, 72))
+            }
             // Directories or files that occupied < 10.0%, Green
-            Some(Color::Rgb(100, 255, 90))
+            _ => Some(darken(100, 255, 90)),
         }
     }
 }
@@ -208,10 +212,19 @@ fn show_item_disk_analyze(
     buffer.set_color(ColorSpec::new().set_fg(INDENT_COLOR))?;
     write!(buffer, "{}{}", info.indents_size, info.display_prefix())?;
     // Percentage
-    buffer.set_color(ColorSpec::new().set_fg(info.display_color()))?;
-    write!(buffer, " {} ", format!("{:1$.2$}%", info.occupied_size, config.decimal_num + 3, config.decimal_num))?;
+    buffer.set_color(ColorSpec::new().set_fg(info.display_color(false)))?;
+    write!(
+        buffer,
+        " {} ",
+        format!(
+            "{:1$.2$}%",
+            info.occupied_size,
+            config.decimal_num + 3,
+            config.decimal_num
+        )
+    )?;
     // Disk size
-    buffer.reset()?;
+    buffer.set_color(ColorSpec::new().set_fg(info.display_color(true)))?;
     write!(buffer, "[{}]", pretty_bytes(item.disk_size as f64),)?;
     // Arrow
     buffer.set_color(ColorSpec::new().set_fg(INDENT_COLOR))?;
