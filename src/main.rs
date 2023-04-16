@@ -1,6 +1,7 @@
 use atty::Stream;
 #[allow(unused_imports)]
 use mrdu::{AnalysisItem, FileInfo};
+use pretty_bytes::converter::convert as pretty_bytes;
 use std::env;
 use std::error::Error;
 use std::io;
@@ -8,7 +9,6 @@ use std::io::Write;
 use std::path::PathBuf;
 use structopt::StructOpt;
 use termcolor::{Buffer, BufferWriter, Color, ColorChoice, ColorSpec, WriteColor};
-use pretty_bytes::converter::convert as pretty_bytes;
 
 #[allow(dead_code)]
 const INDENT_COLOR: Option<Color> = Some(Color::Rgb(75, 75, 75));
@@ -45,6 +45,13 @@ struct Arguments {
     ///
     /// This would actually retrieve allocation size of files (AKA physical size on disk)
     apparent: bool,
+
+    #[structopt(short = "n")]
+    /// Number of decimal places
+    ///
+    /// The number of decimal places occupied by files or folders
+    /// Default: 2 decimal places
+    decimal_num: usize,
 }
 
 #[derive(Debug, Clone)]
@@ -158,22 +165,27 @@ fn show_disk_analyze_result(
     info: &DisplayItemInfo,
     buffer: &mut Buffer,
 ) -> io::Result<()> {
-    show_item_disk_analyze(item, &info, buffer)?;
+    show_item_disk_analyze(item, &config, &info, buffer)?;
 
     if info.dir_level < config.max_depth {
         if let Some(children) = &item.children {
             let children = children
-            .iter()
-            .map(|child| (child, size_fraction(child, item)))
-            .filter(|&(_, occupied_size)| occupied_size > config.min_percent)
-            .collect::<Vec<_>>();
+                .iter()
+                .map(|child| (child, size_fraction(child, item)))
+                .filter(|&(_, occupied_size)| occupied_size > config.min_percent)
+                .collect::<Vec<_>>();
 
             if let Some((last_chlid, children)) = children.split_last() {
                 for &(child, occupied_size) in children.iter() {
                     show_disk_analyze_result(child, config, &info.add_item(occupied_size), buffer)?;
                 }
                 let &(child, occupied_size) = last_chlid;
-                show_disk_analyze_result(child, config, &info.add_last_item(occupied_size), buffer)?;
+                show_disk_analyze_result(
+                    child,
+                    config,
+                    &info.add_last_item(occupied_size),
+                    buffer,
+                )?;
             }
         }
     }
@@ -186,13 +198,18 @@ fn _show_help() -> io::Result<()> {
 }
 
 /// 函数，磁盘分析结果 —— 单个项
-fn show_item_disk_analyze(item: &AnalysisItem, info: &DisplayItemInfo, buffer: &mut Buffer) -> io::Result<()> {
+fn show_item_disk_analyze(
+    item: &AnalysisItem,
+    config: &Arguments,
+    info: &DisplayItemInfo,
+    buffer: &mut Buffer,
+) -> io::Result<()> {
     // Indentation
     buffer.set_color(ColorSpec::new().set_fg(INDENT_COLOR))?;
     write!(buffer, "{}{}", info.indents_size, info.display_prefix())?;
     // Percentage
     buffer.set_color(ColorSpec::new().set_fg(info.display_color()))?;
-    write!(buffer, " {} ", format!("{:.2}%", info.occupied_size))?;
+    write!(buffer, " {} ", format!("{:1$.2$}%", info.occupied_size, config.decimal_num + 3, config.decimal_num))?;
     // Disk size
     buffer.reset()?;
     write!(buffer, "[{}]", pretty_bytes(item.disk_size as f64),)?;
