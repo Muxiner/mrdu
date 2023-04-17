@@ -5,7 +5,7 @@ use std::iter::once;
 use std::os::windows::ffi::OsStrExt;
 use std::path::Path;
 use termcolor::{Buffer, ColorSpec, WriteColor};
-use pretty_bytes::converter::convert as pretty_bytes; // 需要修改
+use pretty_bytes::converter::convert;
 use winapi::shared::winerror::NO_ERROR;
 use winapi::um::errhandlingapi::GetLastError;
 use winapi::um::fileapi::{GetCompressedFileSizeW, INVALID_FILE_SIZE};
@@ -89,7 +89,7 @@ pub fn show_item_disk_analyze(
     )?;
     // Disk size
     buffer.set_color(ColorSpec::new().set_fg(info.display_color(true)))?;
-    write!(buffer, "[{}]", pretty_bytes(item.disk_size as f64),)?;
+    write!(buffer, "[{}]", convert(item.disk_size as f64),)?;
     // Arrow
     buffer.set_color(ColorSpec::new().set_fg(INDENT_COLOR))?;
     write!(buffer, " {} ", tree_shape::SPACING)?;
