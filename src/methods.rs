@@ -10,6 +10,7 @@ use winapi::shared::winerror::NO_ERROR;
 use winapi::um::errhandlingapi::GetLastError;
 use winapi::um::fileapi::{GetCompressedFileSizeW, INVALID_FILE_SIZE};
 
+
 use crate::struct_define::analysis_item::AnalysisItem;
 use crate::struct_define::config::Arguments;
 use crate::struct_define::display_color::COLOR_GRAY;
@@ -89,7 +90,7 @@ pub fn show_item_disk_analyze(
     )?;
     // Disk size
     buffer.set_color(ColorSpec::new().set_fg(info.display_color(true)))?;
-    write!(buffer, "[{}]", convert(item.disk_size as f64),)?;
+    write!(buffer, "[{}]", convert(item.disk_size as f64), )?;
     // Arrow
     buffer.set_color(ColorSpec::new().set_fg(COLOR_GRAY))?;
     write!(buffer, " {} ", tree_shape::SPACING)?;
@@ -104,10 +105,43 @@ pub fn size_fraction(child: &AnalysisItem, parent: &AnalysisItem) -> f64 {
 }
 
 pub fn compressed_size(path: &Path) -> Result<u64, Box<dyn Error>> {
-    let wide: Vec<u16> = path.as_os_str().encode_wide().chain(once(0)).collect();
+    let wide: Vec<u16> = path
+        .as_os_str()
+        .encode_wide()
+        .chain(once(0))
+        .collect();
     let mut high: u32 = 0;
+    // use std::ptr::null_mut;
+    // use winapi::um::fileapi::{CreateFileW, GetFileSize, OPEN_EXISTING};
+    // use winapi::um::winnt::{GENERIC_READ, FILE_SHARE_READ};
+    // use winapi::um::handleapi::INVALID_HANDLE_VALUE;
+    // let wide: Vec<u16> = path
+    //     .as_os_str()
+    //     .encode_wide()
+    //     .chain(Some(0).into_iter())
+    //     .collect();
+    // let handle = unsafe {
+    //     CreateFileW(
+    //         wide.as_ptr(),
+    //         GENERIC_READ,
+    //         FILE_SHARE_READ,
+    //         null_mut(),
+    //         OPEN_EXISTING,
+    //         0,
+    //         null_mut(),
+    //     )
+    // };
+    //
+    // if handle == INVALID_HANDLE_VALUE {
+    //     // handle 创建失败
+    //     let err = get_last_error();
+    //     if err != NO_ERROR {
+    //         return Err(std::io::Error::last_os_error().into());
+    //     }
+    // }
+    // let low = unsafe { GetFileSize(handle, &mut high) };
 
-    // TODO: Deal with max path size
+    // GetCompressedFileSizeW 是宽字符版本的函数，用于操作 Unicode 字符集的字符串。
     let low = unsafe { GetCompressedFileSizeW(wide.as_ptr(), &mut high) };
 
     if low == INVALID_FILE_SIZE {
