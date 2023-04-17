@@ -12,7 +12,7 @@ use winapi::um::fileapi::{GetCompressedFileSizeW, INVALID_FILE_SIZE};
 
 use crate::struct_define::analysis_item::AnalysisItem;
 use crate::struct_define::config::Arguments;
-use crate::struct_define::display_color::INDENT_COLOR;
+use crate::struct_define::display_color::COLOR_GRAY;
 use crate::struct_define::display_info::DisplayItemInfo;
 use crate::struct_define::tree_shape;
 
@@ -68,7 +68,7 @@ pub fn show_item_disk_analyze(
     buffer: &mut Buffer,
 ) -> io::Result<()> {
     // Indentation
-    buffer.set_color(ColorSpec::new().set_fg(INDENT_COLOR))?;
+    buffer.set_color(ColorSpec::new().set_fg(COLOR_GRAY))?;
     write!(
         buffer,
         "{}{}",
@@ -91,7 +91,7 @@ pub fn show_item_disk_analyze(
     buffer.set_color(ColorSpec::new().set_fg(info.display_color(true)))?;
     write!(buffer, "[{}]", convert(item.disk_size as f64),)?;
     // Arrow
-    buffer.set_color(ColorSpec::new().set_fg(INDENT_COLOR))?;
+    buffer.set_color(ColorSpec::new().set_fg(COLOR_GRAY))?;
     write!(buffer, " {} ", tree_shape::SPACING)?;
     // Name
     buffer.reset()?;

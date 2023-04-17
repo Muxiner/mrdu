@@ -16,5 +16,5 @@ pub mod tree_shape {
 // 模块，终端输出内容的颜色
 pub mod display_color {
     use termcolor::Color;
-    pub const INDENT_COLOR: Option<Color> = Some(Color::Rgb(147, 147, 147));
+    pub const COLOR_GRAY: Option<Color> = Some(Color::Rgb(147, 147, 147));
 }
