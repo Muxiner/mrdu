@@ -1,21 +1,18 @@
-use std::error::Error;
 use std::io;
 use std::io::Write;
-use std::iter::once;
-use std::os::windows::ffi::OsStrExt;
-use std::path::Path;
 use termcolor::{Buffer, ColorSpec, WriteColor};
 use pretty_bytes::converter::convert;
-use winapi::shared::winerror::NO_ERROR;
-use winapi::um::errhandlingapi::GetLastError;
-use winapi::um::fileapi::{GetCompressedFileSizeW, INVALID_FILE_SIZE};
-
 
 use crate::struct_define::analysis_item::AnalysisItem;
 use crate::struct_define::config::Arguments;
 use crate::struct_define::display_color::COLOR_GRAY;
 use crate::struct_define::display_info::DisplayItemInfo;
 use crate::struct_define::tree_shape;
+
+#[cfg(windows)]
+use std::error::Error;
+#[cfg(windows)]
+use std::path::Path;
 
 /// 函数，磁盘分析结果
 pub fn show_disk_analyze_result(
@@ -24,7 +21,7 @@ pub fn show_disk_analyze_result(
     info: &DisplayItemInfo,
     buffer: &mut Buffer,
 ) -> io::Result<()> {
-    show_item_disk_analyze(item, &config, &info, buffer)?;
+    show_disk_analyze_item(item, &config, &info, buffer)?;
 
     if info.dir_level < config.max_depth {
         if let Some(children) = &item.children {
@@ -62,7 +59,7 @@ pub fn _show_help() -> io::Result<()> {
 }
 
 /// 函数，磁盘分析结果 —— 单个项
-pub fn show_item_disk_analyze(
+pub fn show_disk_analyze_item(
     item: &AnalysisItem,
     config: &Arguments,
     info: &DisplayItemInfo,
@@ -90,7 +87,8 @@ pub fn show_item_disk_analyze(
     )?;
     // Disk size
     buffer.set_color(ColorSpec::new().set_fg(info.display_color(true)))?;
-    write!(buffer, "[{}]", convert(item.disk_size as f64), )?;
+    // write!(buffer, "[{}]", convert(item.disk_size as f64), )?;
+    write!(buffer, "[{}]", (item.disk_size as f64).to_string() )?;
     // Arrow
     buffer.set_color(ColorSpec::new().set_fg(COLOR_GRAY))?;
     write!(buffer, " {} ", tree_shape::SPACING)?;
@@ -104,7 +102,12 @@ pub fn size_fraction(child: &AnalysisItem, parent: &AnalysisItem) -> f64 {
     100.0 * (child.disk_size as f64 / parent.disk_size as f64)
 }
 
+#[cfg(windows)]
 pub fn compressed_size(path: &Path) -> Result<u64, Box<dyn Error>> {
+    use std::iter::once;
+    use std::os::windows::ffi::OsStrExt;
+    use winapi::shared::winerror::NO_ERROR;
+    use winapi::um::fileapi::{GetCompressedFileSizeW, INVALID_FILE_SIZE};
     let wide: Vec<u16> = path
         .as_os_str()
         .encode_wide()
@@ -154,6 +157,8 @@ pub fn compressed_size(path: &Path) -> Result<u64, Box<dyn Error>> {
     Ok(u64::from(high) << 32 | u64::from(low))
 }
 
+#[cfg(windows)]
 pub fn get_last_error() -> u32 {
+    use winapi::um::errhandlingapi::GetLastError;
     unsafe { GetLastError() }
 }

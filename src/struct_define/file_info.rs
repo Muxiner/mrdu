@@ -1,5 +1,7 @@
 use std::error::Error;
 use std::path::Path;
+
+#[cfg(windows)]
 use crate::methods::compressed_size;
 
 pub enum FileInfo {
