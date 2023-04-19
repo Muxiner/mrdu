@@ -1,7 +1,6 @@
 use std::io;
 use std::io::Write;
 use termcolor::{Buffer, ColorSpec, WriteColor};
-use pretty_bytes::converter::convert;
 
 use crate::struct_define::analysis_item::AnalysisItem;
 use crate::struct_define::config::Arguments;
@@ -87,8 +86,8 @@ pub fn show_disk_analyze_item(
     )?;
     // Disk size
     buffer.set_color(ColorSpec::new().set_fg(info.display_color(true)))?;
-    // write!(buffer, "[{}]", convert(item.disk_size as f64), )?;
-    write!(buffer, "[{}]", (item.disk_size as f64).to_string() )?;
+    write!(buffer, "[{}]", convert_to_bytes(item.disk_size as f64),)?;
+    // write!(buffer, "[{}]", (item.disk_size as f64).to_string() )?;
     // Arrow
     buffer.set_color(ColorSpec::new().set_fg(COLOR_GRAY))?;
     write!(buffer, " {} ", tree_shape::SPACING)?;
@@ -102,17 +101,35 @@ pub fn size_fraction(child: &AnalysisItem, parent: &AnalysisItem) -> f64 {
     100.0 * (child.disk_size as f64 / parent.disk_size as f64)
 }
 
+// pretty_bytes::converter::convert 据此修改修改
+pub fn convert_to_bytes(num: f64) -> String {
+    use std::cmp;
+    let negative = if num.is_sign_positive() { "" } else { "-" };
+    let num = num.abs();
+    let units = ["B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"];
+    if num < 1_f64 {
+        return format!("{}{} {}", negative, num, "B");
+    }
+    let delimiter = 1000_f64;
+    let exponent = cmp::min(
+        (num.ln() / delimiter.ln()).floor() as i32,
+        (units.len() - 1) as i32,
+    );
+    let pretty_bytes = format!("{:.2}", num / delimiter.powi(exponent))
+        .parse::<f64>()
+        .unwrap()
+        * 1_f64;
+    let unit = units[exponent as usize];
+    format!("{}{} {}", negative, pretty_bytes, unit)
+}
+
 #[cfg(windows)]
 pub fn compressed_size(path: &Path) -> Result<u64, Box<dyn Error>> {
     use std::iter::once;
     use std::os::windows::ffi::OsStrExt;
     use winapi::shared::winerror::NO_ERROR;
     use winapi::um::fileapi::{GetCompressedFileSizeW, INVALID_FILE_SIZE};
-    let wide: Vec<u16> = path
-        .as_os_str()
-        .encode_wide()
-        .chain(once(0))
-        .collect();
+    let wide: Vec<u16> = path.as_os_str().encode_wide().chain(once(0)).collect();
     let mut high: u32 = 0;
     // use std::ptr::null_mut;
     // use winapi::um::fileapi::{CreateFileW, GetFileSize, OPEN_EXISTING};

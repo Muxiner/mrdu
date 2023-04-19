@@ -1,5 +1,5 @@
-use termcolor::Color;
 use crate::struct_define::tree_shape;
+use termcolor::Color;
 
 #[derive(Debug, Clone)]
 #[allow(dead_code)]

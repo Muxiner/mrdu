@@ -1,6 +1,6 @@
+pub mod analysis_item;
 pub mod config;
 pub mod display_info;
-pub mod analysis_item;
 pub mod file_info;
 
 // 模块，终端输出树形结构视觉效果

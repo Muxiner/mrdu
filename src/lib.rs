@@ -1,2 +1,2 @@
-pub mod struct_define;
 pub mod methods;
+pub mod struct_define;

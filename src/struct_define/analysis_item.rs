@@ -1,9 +1,9 @@
-use std::fs;
-use std::ffi::OsStr;
-use std::path::Path;
-use std::error::Error;
-use serde::Serialize;
 use rayon::prelude::{IntoParallelRefIterator, ParallelIterator};
+use serde::Serialize;
+use std::error::Error;
+use std::ffi::OsStr;
+use std::fs;
+use std::path::Path;
 
 use crate::struct_define::file_info::FileInfo;
 

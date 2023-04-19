@@ -1,5 +1,5 @@
-use std::env;
 use atty::Stream;
+use std::env;
 use std::error::Error;
 use structopt::StructOpt;
 use termcolor::{BufferWriter, ColorChoice};
@@ -9,7 +9,6 @@ use mrdu::struct_define::analysis_item::AnalysisItem;
 use mrdu::struct_define::config::Arguments;
 use mrdu::struct_define::display_info::DisplayItemInfo;
 use mrdu::struct_define::file_info::FileInfo;
-
 
 fn main() -> Result<(), Box<dyn Error>> {
     let test_args = Arguments::from_args();
@@ -38,4 +37,9 @@ fn main() -> Result<(), Box<dyn Error>> {
     show_disk_analyze_result(&analysed, &test_args, &DisplayItemInfo::new(), &mut buffer)?;
     stdout.print(&buffer)?;
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
 }
