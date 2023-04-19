@@ -57,7 +57,6 @@ pub fn get_max_depth(path: &str) -> Option<usize> {
     max_depth
 }
 
-
 #[cfg(test)]
 mod test_analyse {
     use crate::{build_command, get_all_filename_dirname, get_max_depth};
@@ -180,7 +179,8 @@ mod test_analyse {
             .replace(r#"\"#, "/");
         let depth = get_max_depth(&target_dir).unwrap();
         let output = build_command(vec!["-d", depth.to_string().as_str(), "tests/test_file"]);
-        let mut file_names = get_all_filename_dirname(&target_dir, depth as u8).unwrap_or_else(|_| Vec::new());
+        let mut file_names =
+            get_all_filename_dirname(&target_dir, depth as u8).unwrap_or_else(|_| Vec::new());
         file_names.push("test_file".to_string());
         // println!("{}", output);
         for file_name in file_names {
