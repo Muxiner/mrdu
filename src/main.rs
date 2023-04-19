@@ -38,8 +38,3 @@ fn main() -> Result<(), Box<dyn Error>> {
     stdout.print(&buffer)?;
     Ok(())
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-}

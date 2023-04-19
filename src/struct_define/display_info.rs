@@ -68,3 +68,9 @@ impl DisplayItemInfo {
         }
     }
 }
+
+impl Default for DisplayItemInfo {
+    fn default() -> Self {
+        Self::new()
+    }
+}

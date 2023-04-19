@@ -18,7 +18,7 @@ impl AnalysisItem {
     pub fn analyze(path: &Path, apparent: bool, root_dev: u64) -> Result<Self, Box<dyn Error>> {
         let name: String = path
             .file_name()
-            .unwrap_or(&OsStr::new("."))
+            .unwrap_or(OsStr::new("."))
             .to_string_lossy()
             .to_string();
 

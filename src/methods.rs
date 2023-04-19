@@ -77,7 +77,7 @@ pub fn show_disk_analyze_item(
     write!(
         buffer,
         " {} ",
-        format!(
+        format_args!(
             "{:1$.2$}%",
             info.occupied_size,
             config.decimal_num + 3,
