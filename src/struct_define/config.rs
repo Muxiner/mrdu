@@ -15,7 +15,7 @@ pub struct Arguments {
 
     /// Threshold that determines if entry is worth being shown.
     /// Between 0-100%.
-    #[structopt(short = "p", long = "min-percent", default_value = "0.01")]
+    #[structopt(short = "p", long = "min-percent", default_value = "10")]
     pub min_percent: f64,
 
     /// Apparent size on disk
