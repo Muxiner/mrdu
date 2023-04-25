@@ -32,13 +32,13 @@ impl DisplayItemInfo {
         }
     }
 
-    pub fn display_prefix(&self, another_prefix: bool) -> &'static str {
+    pub fn display_prefix(&self, is_fork: bool) -> &'static str {
         match self.is_last {
-            true => match another_prefix {
+            true => match is_fork {
                 true => tree_shape::LAST_LEAF,  // "└──"
                 false => "  ",
             },
-            false => match another_prefix {
+            false => match is_fork {
                 true => tree_shape::LEAF,       // "├──"
                 false => tree_shape::BRANCH,    // "│"
             },
