@@ -35,12 +35,12 @@ impl DisplayItemInfo {
     pub fn display_prefix(&self, another_prefix: bool) -> &'static str {
         match self.is_last {
             true => match another_prefix {
-                true => tree_shape::LAST_LEAF,
+                true => tree_shape::LAST_LEAF,  // "└──"
                 false => "  ",
             },
             false => match another_prefix {
-                true => tree_shape::LEAF,
-                false => tree_shape::BRANCH,
+                true => tree_shape::LEAF,       // "├──"
+                false => tree_shape::BRANCH,    // "│"
             },
         }
     }
