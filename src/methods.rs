@@ -69,8 +69,8 @@ pub fn show_disk_analyze_item(
     write!(
         buffer,
         "{}{}",
-        info.indents_size,
-        info.display_prefix_indent(true)
+        info.prefix,
+        info.display_prefix(true)
     )?;
     // Percentage
     buffer.set_color(ColorSpec::new().set_fg(info.display_color(false)))?;

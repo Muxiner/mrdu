@@ -27,18 +27,18 @@ impl DisplayItemInfo {
             dir_level: self.dir_level + 1,
             is_last,
             prefix: self.prefix.clone()
-                + self.display_prefix_indent(false)
+                + self.display_prefix(false)
                 + &String::from("  "),
         }
     }
 
-    pub fn display_prefix_indent(&self, is_prefix: bool) -> &'static str {
+    pub fn display_prefix(&self, another_prefix: bool) -> &'static str {
         match self.is_last {
-            true => match is_prefix {
+            true => match another_prefix {
                 true => tree_shape::LAST_LEAF,
                 false => "  ",
             },
-            false => match is_prefix {
+            false => match another_prefix {
                 true => tree_shape::LEAF,
                 false => tree_shape::BRANCH,
             },
