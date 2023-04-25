@@ -7,7 +7,7 @@ pub struct DisplayItemInfo {
     pub(crate) occupied_size: f64,
     pub(crate) dir_level: usize,
     is_last: bool,
-    pub(crate) indents_size: String,
+    pub(crate) prefix: String,
 }
 
 #[allow(dead_code)]
@@ -17,7 +17,7 @@ impl DisplayItemInfo {
             occupied_size: 100.0,
             dir_level: 0,
             is_last: true,
-            indents_size: String::new(),
+            prefix: String::new(),
         }
     }
 
@@ -26,7 +26,7 @@ impl DisplayItemInfo {
             occupied_size,
             dir_level: self.dir_level + 1,
             is_last,
-            indents_size: self.indents_size.clone()
+            prefix: self.prefix.clone()
                 + self.display_prefix_indent(false)
                 + &String::from("  "),
         }
