@@ -25,14 +25,18 @@ fn main() -> Result<(), Box<dyn Error>> {
     let stdout = BufferWriter::stdout(color_choice);
     let mut buffer = stdout.buffer();
 
-    println!("\nAnalyzing: {}\n", target_dir.display());
+    println!("\nAnalyzing: {}", target_dir.display());
 
+    let start_time = std::time::Instant::now();
     let analysed = match file_info {
         FileInfo::Directory { volume_id } => {
             AnalysisItem::analyze(&target_dir, test_args.apparent, volume_id)?
         }
         _ => return Err(format!("{} is not a directory!", target_dir.display()).into()),
     };
+
+    let elapsed_time = start_time.elapsed();
+    println!("Elapsed time: {:?}", elapsed_time);
 
     show_disk_analyze_result(&analysed, &test_args, &DisplayItemInfo::new(), &mut buffer)?;
     stdout.print(&buffer)?;
