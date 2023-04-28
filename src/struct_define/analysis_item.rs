@@ -1,5 +1,4 @@
 use rayon::prelude::{IntoParallelRefIterator, ParallelIterator};
-use serde::Serialize;
 use std::error::Error;
 use std::ffi::OsStr;
 use std::fs;
@@ -7,7 +6,6 @@ use std::path::Path;
 
 use crate::struct_define::file_info::FileInfo;
 
-#[derive(Serialize)]
 pub struct AnalysisItem {
     pub name: String,
     pub disk_size: u64,
