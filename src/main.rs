@@ -34,11 +34,9 @@ fn main() -> Result<(), Box<dyn Error>> {
         }
         _ => return Err(format!("{} is not a directory!", target_dir.display()).into()),
     };
-
-    let elapsed_time = start_time.elapsed();
-    println!("Elapsed time: {:?}", elapsed_time);
-
     show_disk_analyze_result(&analysed, &test_args, &DisplayItemInfo::new(), &mut buffer)?;
     stdout.print(&buffer)?;
+    let elapsed_time = start_time.elapsed();
+    println!("\nElapsed time: {:?}", elapsed_time);
     Ok(())
 }
