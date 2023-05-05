@@ -87,7 +87,6 @@ pub fn show_disk_analyze_item(
     // Disk size
     buffer.set_color(ColorSpec::new().set_fg(info.display_color(true)))?;
     write!(buffer, "[{}]", convert_to_bytes(item.disk_size as f64),)?;
-    // write!(buffer, "[{}]", (item.disk_size as f64).to_string() )?;
     // Arrow
     buffer.set_color(ColorSpec::new().set_fg(COLOR_GRAY))?;
     write!(buffer, " {} ", tree_shape::SPACING)?;
