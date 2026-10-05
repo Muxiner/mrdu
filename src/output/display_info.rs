@@ -86,3 +86,44 @@ impl Default for DisplayItemInfo {
         Self::new()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn prefix_reflects_position() {
+        let last = DisplayItemInfo::new().add_item(50.0, true);
+        assert_eq!(last.display_prefix(true), tree_shape::LAST_LEAF);
+
+        let middle = DisplayItemInfo::new().add_item(50.0, false);
+        assert_eq!(middle.display_prefix(true), tree_shape::LEAF);
+        assert_eq!(middle.display_prefix(false), tree_shape::BRANCH);
+    }
+
+    #[test]
+    fn color_follows_occupancy_thresholds() {
+        assert_eq!(
+            DisplayItemInfo::new().display_color(false),
+            Some(Color::Rgb(250, 250, 250))
+        );
+        assert_eq!(
+            DisplayItemInfo::new()
+                .add_item(60.0, false)
+                .display_color(false),
+            Some(Color::Rgb(255, 100, 100))
+        );
+        assert_eq!(
+            DisplayItemInfo::new()
+                .add_item(20.0, false)
+                .display_color(false),
+            Some(Color::Rgb(255, 222, 72))
+        );
+        assert_eq!(
+            DisplayItemInfo::new()
+                .add_item(5.0, false)
+                .display_color(false),
+            Some(Color::Rgb(100, 255, 90))
+        );
+    }
+}
