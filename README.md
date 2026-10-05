@@ -111,14 +111,15 @@ cargo build --release
 ```text
 src/
 ├── main.rs                     # 入口：解析参数、选择配色、调用分析并输出
-├── lib.rs
-├── methods.rs                  # 结果渲染、大小格式化、Windows 压缩大小读取
-└── struct_define/
-    ├── analysis_item.rs        # 分析结果树（递归 + rayon 并行）
-    ├── config.rs               # 命令行参数定义 (structopt)
+├── lib.rs                      # 库入口，导出各模块
+├── args.rs                     # 命令行参数定义 (structopt)
+├── analysis.rs                 # 目录递归分析与结果树（rayon 并行）
+├── file_info.rs                # 跨平台文件/目录信息读取
+└── output/
+    ├── mod.rs                  # 结果树渲染、大小格式化
     ├── display_info.rs         # 缩进前缀与颜色
-    ├── file_info.rs            # 跨平台文件/目录信息读取
-    └── mod.rs                  # 树形字符与颜色常量
+    ├── tree_shape.rs           # 树形连接符常量
+    └── color.rs                # 颜色常量
 ```
 
 ## 许可

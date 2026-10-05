@@ -16,6 +16,10 @@
 
 ### Changed
 
+- 重构模块结构：以 `args`、`analysis`、`file_info`、`output` 替代原
+  `struct_define`、`methods`，并将 `tree_shape`、`color` 拆分为独立文件。
+- 清理死代码（注释掉的旧实现、未使用的辅助函数与常量）。
+- 为公开模块与条目补充文档注释。
 - 补充 `Cargo.toml` 元数据（`license`、`keywords`、`categories`、`rust-version`）。
 - 将仅用于测试的 `assert_cmd`、`walkdir` 移至 `[dev-dependencies]`。
 - 升级 GitHub Actions 至 `actions/checkout@v4` 与 `dtolnay/rust-toolchain`。
