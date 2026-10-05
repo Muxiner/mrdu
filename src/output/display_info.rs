@@ -1,17 +1,26 @@
-use crate::struct_define::tree_shape;
+//! 单个输出条目的展示信息。
+//!
+//! 记录条目占父级的比例、所处深度、缩进前缀与是否为末位子项，
+//! 并据此决定树形连接符与显示颜色。
+
+use crate::output::tree_shape;
 use termcolor::Color;
 
+/// 渲染一个 [`super::AnalysisItem`] 节点所需的展示状态。
 #[derive(Debug, Clone)]
-#[allow(dead_code)]
 pub struct DisplayItemInfo {
+    /// 该条目占父级的百分比（根节点为 100）。
     pub(crate) occupied_size: f64,
+    /// 当前深度，根节点为 0。
     pub(crate) dir_level: usize,
+    /// 是否为同级中的最后一个条目，影响连接符形状。
     is_last: bool,
+    /// 累积的缩进前缀。
     pub(crate) prefix: String,
 }
 
-#[allow(dead_code)]
 impl DisplayItemInfo {
+    /// 创建根节点对应的展示信息。
     pub fn new() -> Self {
         Self {
             occupied_size: 100.0,
@@ -21,30 +30,33 @@ impl DisplayItemInfo {
         }
     }
 
+    /// 基于当前节点派生出子节点的展示信息。
     pub fn add_item(&self, occupied_size: f64, is_last: bool) -> Self {
         Self {
             occupied_size,
             dir_level: self.dir_level + 1,
             is_last,
-            prefix: self.prefix.clone()
-                + self.display_prefix(false)
-                + &String::from("  "),
+            prefix: self.prefix.clone() + self.display_prefix(false) + &String::from("  "),
         }
     }
 
+    /// 返回树形连接符：`is_fork` 为 `true` 时返回分支符号，否则返回缩进。
     pub fn display_prefix(&self, is_fork: bool) -> &'static str {
         match self.is_last {
             true => match is_fork {
-                true => tree_shape::LAST_LEAF,  // "└──"
+                true => tree_shape::LAST_LEAF, // "└──"
                 false => "  ",
             },
             false => match is_fork {
-                true => tree_shape::LEAF,       // "├──"
-                false => tree_shape::BRANCH,    // "│"
+                true => tree_shape::LEAF,    // "├──"
+                false => tree_shape::BRANCH, // "│"
             },
         }
     }
 
+    /// 返回显示颜色：根节点为白色，其余按占比分为红 / 黄 / 绿。
+    ///
+    /// `is_disk_size` 为 `true` 时返回大小文字所用的加深色。
     pub fn display_color(&self, is_disk_size: bool) -> Option<Color> {
         let darken = |x: u8| (x as f32 * 0.5).round() as u8;
         let get_color = |r: u8, g: u8, b: u8| {
@@ -55,15 +67,15 @@ impl DisplayItemInfo {
             }
         };
         match self.dir_level {
-            // Analyzed root directory, Purple
+            // 根目录，白色
             0 => Some(get_color(250, 250, 250)),
-            // Directories or files that occupied >= 50%, Red
+            // 占比 >= 50%，红色
             _ if self.occupied_size >= 50.0 => Some(get_color(255, 100, 100)),
-            // Directories or files that occupied < 50.0% && >= 10.0%, Yellow
+            // 占比 [10, 50)，黄色
             _ if self.occupied_size >= 10.0 && self.occupied_size < 50.0 => {
                 Some(get_color(255, 222, 72))
             }
-            // Directories or files that occupied < 10.0%, Green
+            // 占比 < 10%，绿色
             _ => Some(get_color(100, 255, 90)),
         }
     }

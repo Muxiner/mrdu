@@ -3,9 +3,13 @@ name = "mrdu"
 version = "0.1.0"
 authors = ["Muxiner <muxinerhuang@gmail.com>"]
 edition = "2021"
+rust-version = "1.70.0"
 readme = "README.md"
 description = "A simple command line disk analysis tool."
 repository = "https://github.com/Muxiner/mrdu"
+license = "MIT"
+keywords = ["disk", "du", "cli", "filesystem", "command-line"]
+categories = ["command-line-utilities"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -28,6 +32,8 @@ structopt = "0.3.26"
 termcolor = "1.2.0"
 rayon = "1.6.1"
 atty = "0.2.14"
+
+[dev-dependencies]
 assert_cmd = "2.0.8"
 walkdir = "2"
 

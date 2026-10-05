@@ -1,6 +1,12 @@
+//! 命令行参数定义。
+//!
+//! 通过 [`structopt`] 从命令行解析参数，`Arguments` 同时承载默认值与
+//! 帮助信息（字段上的文档注释会被 `structopt` 用作 `--help` 文本）。
+
 use std::path::PathBuf;
 use structopt::StructOpt;
 
+/// 磁盘分析工具的运行时参数。
 #[derive(Debug, StructOpt)]
 #[structopt(name = "mrdu", about = "A simple command line disk analysis tool.")]
 pub struct Arguments {
