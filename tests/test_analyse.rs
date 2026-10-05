@@ -1,181 +1,164 @@
+//! CLI 端到端测试。
+//!
+//! 通过 `assert_cmd` 调用真实编译出的 `mrdu` 二进制，覆盖默认分析、
+//! 深度 / 占比 / 精度 / 实际分配大小等选项，以及文件、不存在路径等错误分支。
+
 use assert_cmd::Command;
-use std::error::Error;
 use std::ffi::OsStr;
-use std::fs;
-use std::str;
-use walkdir::WalkDir;
+use std::process::Output;
 
-// 构建一个命令行指令，并执行该指令，并返回标准输出的字符串
-pub fn build_command<T: AsRef<OsStr>>(command_args: Vec<T>) -> String {
-    let mut cmd = &mut Command::cargo_bin("mrdu").unwrap();
-    for p in command_args {
-        cmd = cmd.arg(p);
-    }
-    let finished = &cmd.unwrap();
-    let stderr = str::from_utf8(&finished.stderr).unwrap();
-    assert_eq!(stderr, "");
+/// 用于测试的固定目录。
+const FIXTURE: &str = "tests/test_file";
 
-    str::from_utf8(&finished.stdout).unwrap().into()
+/// 运行 `mrdu` 并返回其执行结果。
+fn run<I, S>(args: I) -> Output
+where
+    I: IntoIterator<Item = S>,
+    S: AsRef<OsStr>,
+{
+    Command::cargo_bin("mrdu")
+        .expect("未找到 mrdu 二进制")
+        .args(args)
+        .output()
+        .expect("执行 mrdu 失败")
 }
 
-// 递归获取给定路径和深度的所有的文件名和文件夹名
-pub fn get_all_filename_dirname(dir_path: &str, depth: u8) -> Result<Vec<String>, Box<dyn Error>> {
-    let mut vec_string: Vec<String> = Vec::new();
-    for entry in fs::read_dir(dir_path)? {
-        let entry = entry?;
-        match entry.path().is_dir() {
-            true => {
-                vec_string.push(entry.file_name().to_str().unwrap().to_string());
-                if depth > 1 {
-                    vec_string.extend(
-                        get_all_filename_dirname(entry.path().to_str().unwrap(), depth - 1)
-                            .unwrap_or_else(|_| Vec::new()),
-                    );
-                }
-            }
-            false => vec_string.push(entry.file_name().to_str().unwrap().to_string()),
-        }
-    }
-    Ok(vec_string)
+/// 运行并断言成功、stderr 为空，返回标准输出字符串。
+fn run_ok<I, S>(args: I) -> String
+where
+    I: IntoIterator<Item = S>,
+    S: AsRef<OsStr>,
+{
+    let output = run(args);
+    assert!(
+        output.status.success(),
+        "预期成功，实际退出码 {:?}，stderr: {}",
+        output.status.code(),
+        String::from_utf8_lossy(&output.stderr)
+    );
+    assert_eq!(
+        String::from_utf8_lossy(&output.stderr),
+        "",
+        "成功的运行不应向 stderr 输出"
+    );
+    String::from_utf8(output.stdout).expect("标准输出不是合法 UTF-8")
 }
 
-// 获取 path 这一路径中能够递归的深度
-pub fn get_max_depth(path: &str) -> Option<usize> {
-    let mut max_depth = None;
-    for entry in WalkDir::new(path).max_depth(10) {
-        match entry {
-            Ok(entry) => {
-                let depth = entry.depth();
-                max_depth = max_depth.map(|max: usize| max.max(depth)).or(Some(depth));
-            }
-            Err(error) => {
-                eprintln!("Error: {}", error);
-                continue;
-            }
-        }
-    }
-    max_depth
+/// 运行并断言失败，返回 stderr 字符串。
+fn run_err<I, S>(args: I) -> String
+where
+    I: IntoIterator<Item = S>,
+    S: AsRef<OsStr>,
+{
+    let output = run(args);
+    assert!(!output.status.success(), "预期失败，但运行成功了");
+    String::from_utf8_lossy(&output.stderr).into_owned()
 }
 
-#[cfg(test)]
-mod test_analyse {
-    use crate::build_command;
-    // use crate::get_all_filename_dirname;
-    use crate::get_max_depth;
-    use std::env::current_dir;
-    use std::error::Error;
+#[test]
+fn default_analysis_lists_entries_within_depth() {
+    let out = run_ok([FIXTURE]);
 
-    #[test]
-    // 测试没有任何参数的分析结果
-    // 主要测试结果是否含有应该有的 tree——shape 字符和含有的文件名和文件夹名
-    /// # 结果
-    /// ```txt
-    ///    Analyzing: tests/test_file
-    ///    Elapsed time: 1.3224ms
-    ///    └── 100.00% [22.53 KB] ── test_file
-    ///        ├── 24.49% [5.52 KB] ── test_dir_
-    ///        │  └── 97.54% [5.38 KB] ── test_file😄.unicode
-    ///        ├── 24.49% [5.52 KB] ── test_dir_d2
-    ///        │  └── 97.54% [5.38 KB] ── test_file_d2
-    ///        ├── 23.89% [5.38 KB] ── test_dir_hidden_file
-    ///        │  └── 100.00% [5.38 KB] ── .test_file
-    ///        └── 23.89% [5.38 KB] ── test_file_d1
-    /// ```
-    fn test_no_args_analyse() -> Result<(), Box<dyn Error>> {
-        let output = build_command(vec!["tests/test_file"]);
-        // let target_dir = current_dir()?
-        // .join("tests/test_file")
-        // .to_str()
-        // .unwrap()
-        // .replace(r#"\"#, "/");
-        // let mut file_names =
-        // get_all_filename_dirname(&target_dir, 2).unwrap_or_else(|_| Vec::new());
-        // file_names.push("test_file".to_string());
-        // println!("{}", output);
-        // for file_name in file_names {
-        // println!("{}", file_name);
-        // assert!(output.contains(&file_name));
-        // }
-        assert!(output.contains("Analyzing: tests/test_file"));
-        assert!(output.contains("└──"));
-        assert!(output.contains("    ├──"));
-        assert!(output.contains("    │  └──"));
-        assert!(output.contains("    └──"));
-        assert!(output.contains(" ── "));
-        Ok(())
+    assert!(out.contains("Analyzing: tests/test_file"));
+    // 根节点与第一层子项
+    for name in [
+        "test_file",
+        "test_dir_",
+        "test_dir_d2",
+        "test_file_d1",
+        "test_dir_hidden_file",
+    ] {
+        assert!(out.contains(name), "输出缺少 {name}:\n{out}");
     }
+    // 第二层子项（默认深度 2）
+    for name in ["test_file😄.unicode", "test_dir_d3", ".test_file"] {
+        assert!(out.contains(name), "输出缺少 {name}:\n{out}");
+    }
+    // 超过默认深度的条目不应出现
+    for name in ["test_dir_d4", "test_file_d4"] {
+        assert!(!out.contains(name), "不应出现超过深度的 {name}:\n{out}");
+    }
+    // 树形连接符
+    for shape in ["└──", "├──", "│", " ── "] {
+        assert!(out.contains(shape), "输出缺少树形字符 {shape}:\n{out}");
+    }
+}
 
-    #[test]
-    /// ### 结果
-    /// ```txt
-    ///     Analyzing: tests/test_file
-    ///     Elapsed time: 1.451ms
-    ///     └── 100.00% [22.53 KB] ── test_file
-    ///         ├── 24.49% [5.52 KB] ── test_dir_
-    ///         ├── 24.49% [5.52 KB] ── test_dir_d2
-    ///         ├── 23.89% [5.38 KB] ── test_dir_hidden_file
-    ///         └── 23.89% [5.38 KB] ── test_file_d1
-    /// ```
-    fn test_depth_analyse() -> Result<(), Box<dyn Error>> {
-        let output = build_command(vec!["-d", "1", "tests/test_file"]);
-        // println!("{}", output);
-        // let target_dir = current_dir()?
-        //     .join("tests/test_file")
-        //     .to_str()
-        //     .unwrap()
-        //     .replace(r#"\"#, "/");
-        // let mut file_names =
-        //     get_all_filename_dirname(&target_dir, 1).unwrap_or_else(|_| Vec::new());
-        // file_names.push("test_file".to_string());
-        // println!("{}", output);
-        // for file_name in file_names {
-        // println!("{}", file_name);
-        // assert!(output.contains(&file_name));
-        // }
-        assert!(output.contains("Analyzing: tests/test_file"));
-        assert!(output.contains("└──"));
-        assert!(output.contains("    ├──"));
-        assert!(output.contains("    └──"));
-        assert!(output.contains(" ── "));
-        Ok(())
-    }
+#[test]
+fn max_depth_limits_recursion() {
+    let out = run_ok(["-d", "1", FIXTURE]);
 
-    #[test]
-    /// # 结果
-    /// ```txt
-    ///    Analyzing: tests/test_file
-    ///    Elapsed time: 1.3224ms
-    ///    └── 100.00% [22.53 KB] ── test_file
-    ///        ├── 24.49% [5.52 KB] ── test_dir_
-    ///        │  └── 97.54% [5.38 KB] ── test_file😄.unicode
-    ///        ├── 24.49% [5.52 KB] ── test_dir_d2
-    ///        │  └── 97.54% [5.38 KB] ── test_file_d2
-    ///        ├── 23.89% [5.38 KB] ── test_dir_hidden_file
-    ///        │  └── 100.00% [5.38 KB] ── .test_file
-    ///        └── 23.89% [5.38 KB] ── test_file_d1
-    /// ```
-    fn test_max_depth_analyse() -> Result<(), Box<dyn Error>> {
-        let target_dir = current_dir()?
-            .join("tests/test_file")
-            .to_str()
-            .unwrap()
-            .replace(r#"\"#, "/");
-        let depth = get_max_depth(&target_dir).unwrap();
-        let output = build_command(vec!["-d", depth.to_string().as_str(), "tests/test_file"]);
-        // let mut file_names =
-        //     get_all_filename_dirname(&target_dir, depth as u8).unwrap_or_else(|_| Vec::new());
-        // file_names.push("test_file".to_string());
-        // // println!("{}", output);
-        // for file_name in file_names {
-        //     // println!("{}", file_name);
-        //     assert!(output.contains(&file_name));
-        // }
-        assert!(output.contains("Analyzing: tests/test_file"));
-        assert!(output.contains("└──"));
-        assert!(output.contains("    ├──"));
-        assert!(output.contains("    │  └──"));
-        assert!(output.contains("    └──"));
-        assert!(output.contains(" ── "));
-        Ok(())
+    for name in [
+        "test_dir_",
+        "test_dir_d2",
+        "test_file_d1",
+        "test_dir_hidden_file",
+    ] {
+        assert!(out.contains(name), "输出缺少第一层 {name}:\n{out}");
     }
+    for name in ["test_file😄.unicode", "test_dir_d3", ".test_file"] {
+        assert!(!out.contains(name), "深度 1 不应包含第二层 {name}:\n{out}");
+    }
+}
+
+#[test]
+fn min_percent_filters_small_entries() {
+    let out = run_ok(["-p", "30", FIXTURE]);
+
+    // test_dir_ 占比 32.20% > 30%，保留
+    assert!(out.contains("test_dir_"));
+    // 下列条目占比低于 30%，应被过滤
+    for name in ["test_dir_d2", "test_file_d1", "test_dir_hidden_file"] {
+        assert!(!out.contains(name), "低于阈值的 {name} 不应出现:\n{out}");
+    }
+}
+
+#[test]
+fn precision_controls_decimal_places() {
+    let one = run_ok(["-n", "1", FIXTURE]);
+    assert!(one.contains("100.0%"), "缺少一位小数根节点:\n{one}");
+    assert!(one.contains("32.2%"), "缺少一位小数条目:\n{one}");
+    assert!(!one.contains("32.20%"), "不应保留两位小数:\n{one}");
+
+    let zero = run_ok(["-n", "0", FIXTURE]);
+    assert!(zero.contains("32%"), "缺少零位小数条目:\n{zero}");
+    assert!(!zero.contains("32.2%"), "零位小数不应出现小数点:\n{zero}");
+}
+
+#[test]
+fn apparent_flag_runs_successfully() {
+    let out = run_ok(["-a", FIXTURE]);
+    assert!(out.contains("Analyzing: tests/test_file"));
+    assert!(out.contains("test_file"));
+}
+
+#[test]
+fn defaults_to_current_directory() {
+    let output = Command::cargo_bin("mrdu")
+        .expect("未找到 mrdu 二进制")
+        .current_dir(FIXTURE)
+        .output()
+        .expect("执行 mrdu 失败");
+
+    assert!(output.status.success());
+    let out = String::from_utf8(output.stdout).expect("标准输出不是合法 UTF-8");
+    assert!(out.contains("Analyzing:"), "缺少 Analyzing 头:\n{out}");
+    assert!(out.contains("test_dir_"), "未分析当前目录:\n{out}");
+}
+
+#[test]
+fn file_target_reports_error() {
+    let err = run_err(["Cargo.toml"]);
+    assert!(err.contains("is not a directory"), "stderr: {err}");
+}
+
+#[test]
+fn nonexistent_target_reports_error() {
+    let output = run(["tests/__does_not_exist__"]);
+    assert!(!output.status.success());
+    let err = String::from_utf8_lossy(&output.stderr);
+    assert!(
+        err.contains("No such file") || err.contains("NotFound"),
+        "stderr: {err}"
+    );
 }

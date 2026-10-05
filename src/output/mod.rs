@@ -152,3 +152,34 @@ pub fn get_last_error() -> u32 {
     use winapi::um::errhandlingapi::GetLastError;
     unsafe { GetLastError() }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn item(name: &str, disk_size: u64) -> AnalysisItem {
+        AnalysisItem {
+            name: name.to_string(),
+            disk_size,
+            children: None,
+        }
+    }
+
+    #[test]
+    fn convert_to_bytes_picks_unit_by_magnitude() {
+        assert_eq!(convert_to_bytes(0.0), "0 B");
+        assert_eq!(convert_to_bytes(1.0), "1 B");
+        assert_eq!(convert_to_bytes(1000.0), "1 KB");
+        assert_eq!(convert_to_bytes(1500.0), "1.5 KB");
+        assert_eq!(convert_to_bytes(2_000_000.0), "2 MB");
+        assert_eq!(convert_to_bytes(-1000.0), "-1 KB");
+    }
+
+    #[test]
+    fn size_fraction_returns_percentage_of_parent() {
+        let parent = item("parent", 100);
+        assert_eq!(size_fraction(&item("c", 50), &parent), 50.0);
+        assert_eq!(size_fraction(&item("c", 100), &parent), 100.0);
+        assert_eq!(size_fraction(&item("c", 0), &parent), 0.0);
+    }
+}

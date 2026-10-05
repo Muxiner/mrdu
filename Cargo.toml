@@ -35,7 +35,6 @@ atty = "0.2.14"
 
 [dev-dependencies]
 assert_cmd = "2.0.8"
-walkdir = "2"
 
 [target.'cfg(windows)'.dependencies]
 winapi-util = "0.1.5"

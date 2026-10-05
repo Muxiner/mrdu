@@ -104,7 +104,12 @@ cargo test           # 运行测试
 cargo build --release
 ```
 
-测试位于 `tests/`，使用 [`assert_cmd`](https://crates.io/crates/assert_cmd) 以真实二进制配合 `tests/test_file` 目录进行端到端校验。持续集成配置见 `.github/workflows/rust_actions.yml`（每次 push 执行 `cargo check` 与 `cargo test`）。
+测试分两层：
+
+- **单元测试**：位于 `src/` 各模块的 `#[cfg(test)]` 中，覆盖大小格式化、占比计算、前缀与颜色选择。
+- **端到端测试**：位于 `tests/test_analyse.rs`，使用 [`assert_cmd`](https://crates.io/crates/assert_cmd) 以真实二进制配合 `tests/test_file` 目录，校验默认分析、深度 / 占比 / 精度 / 实际分配大小等选项，以及文件、不存在路径等错误分支。
+
+持续集成配置见 `.github/workflows/rust_actions.yml`（每次 push 执行 `cargo check`、`cargo test`、`cargo fmt` 与 `cargo clippy`）。
 
 ## 项目结构
 
