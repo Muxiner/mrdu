@@ -17,6 +17,7 @@
 
 ### Changed
 
+- 以标准库作用域线程按 CPU 核数分块并行，替代 `rayon` 依赖。
 - 重构模块结构：以 `args`、`analysis`、`file_info`、`output` 替代原
   `struct_define`、`methods`，并将 `tree_shape`、`color` 拆分为独立文件。
 - 清理死代码（注释掉的旧实现、未使用的辅助函数与常量）。
