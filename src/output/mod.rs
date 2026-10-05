@@ -1,19 +1,26 @@
+//! 分析结果的终端渲染。
+//!
+//! 把 [`AnalysisItem`] 树按深度与占比阈值筛选后，绘制成带颜色和
+//! 树形连接符的文本输出。同时提供字节数格式化与平台相关的辅助函数。
+
+pub mod color;
+pub mod display_info;
+pub mod tree_shape;
+
 use std::io;
 use std::io::Write;
 use termcolor::{Buffer, ColorSpec, WriteColor};
 
-use crate::struct_define::analysis_item::AnalysisItem;
-use crate::struct_define::config::Arguments;
-use crate::struct_define::display_color::COLOR_GRAY;
-use crate::struct_define::display_info::DisplayItemInfo;
-use crate::struct_define::tree_shape;
+use crate::analysis::AnalysisItem;
+use crate::args::Arguments;
+use crate::output::color::COLOR_GRAY;
+use crate::output::display_info::DisplayItemInfo;
 
-#[cfg(windows)]
-use std::error::Error;
-#[cfg(windows)]
-use std::path::Path;
-
-/// 函数，磁盘分析结果
+/// 递归渲染分析结果树。
+///
+/// 仅渲染深度不超过 `config.max_depth`、且占父级比例大于
+/// `config.min_percent` 的条目；每个子项通过 [`DisplayItemInfo`]
+/// 携带缩进与前缀信息。
 pub fn show_disk_analyze_result(
     item: &AnalysisItem,
     config: &Arguments,
@@ -30,6 +37,7 @@ pub fn show_disk_analyze_result(
                 .filter(|&(_, occupied_size)| occupied_size > config.min_percent)
                 .collect::<Vec<_>>();
 
+            // 最后一个子项使用不同的连接符，单独处理。
             if let Some((last_child, children)) = children.split_last() {
                 for &(child, occupied_size) in children.iter() {
                     show_disk_analyze_result(
@@ -52,22 +60,17 @@ pub fn show_disk_analyze_result(
     Ok(())
 }
 
-/// 函数，帮助信息
-pub fn _show_help() -> io::Result<()> {
-    Ok(())
-}
-
-/// 函数，磁盘分析结果 —— 单个项
+/// 渲染单个条目，依次输出缩进、占比、大小、连接符与名称。
 pub fn show_disk_analyze_item(
     item: &AnalysisItem,
     config: &Arguments,
     info: &DisplayItemInfo,
     buffer: &mut Buffer,
 ) -> io::Result<()> {
-    // Indentation
+    // 缩进与树形连接符
     buffer.set_color(ColorSpec::new().set_fg(COLOR_GRAY))?;
     write!(buffer, "{}{}", info.prefix, info.display_prefix(true))?;
-    // Percentage
+    // 占比
     buffer.set_color(ColorSpec::new().set_fg(info.display_color(false)))?;
     write!(
         buffer,
@@ -79,23 +82,26 @@ pub fn show_disk_analyze_item(
             config.decimal_num
         )
     )?;
-    // Disk size
+    // 磁盘大小
     buffer.set_color(ColorSpec::new().set_fg(info.display_color(true)))?;
     write!(buffer, "[{}]", convert_to_bytes(item.disk_size as f64),)?;
-    // Arrow
+    // 箭头
     buffer.set_color(ColorSpec::new().set_fg(COLOR_GRAY))?;
     write!(buffer, " {} ", tree_shape::SPACING)?;
-    // Name
+    // 名称
     buffer.reset()?;
     writeln!(buffer, "{}", item.name)?;
     Ok(())
 }
 
+/// 计算 `child` 占 `parent` 磁盘大小的百分比（0-100）。
 pub fn size_fraction(child: &AnalysisItem, parent: &AnalysisItem) -> f64 {
     100.0 * (child.disk_size as f64 / parent.disk_size as f64)
 }
 
-// pretty_bytes::converter::convert 据此修改修改
+/// 把字节数格式化为带单位的人类可读字符串（以 1000 为进制）。
+///
+/// 改写自 `pretty_bytes::converter::convert`。
 pub fn convert_to_bytes(num: f64) -> String {
     use std::cmp;
     let negative = if num.is_sign_positive() { "" } else { "-" };
@@ -117,45 +123,17 @@ pub fn convert_to_bytes(num: f64) -> String {
     format!("{}{} {}", negative, pretty_bytes, unit)
 }
 
+/// 读取 Windows 上文件的压缩后实际大小（`GetCompressedFileSizeW`）。
 #[cfg(windows)]
-pub fn compressed_size(path: &Path) -> Result<u64, Box<dyn Error>> {
+pub fn compressed_size(path: &std::path::Path) -> Result<u64, Box<dyn std::error::Error>> {
     use std::iter::once;
     use std::os::windows::ffi::OsStrExt;
     use winapi::shared::winerror::NO_ERROR;
     use winapi::um::fileapi::{GetCompressedFileSizeW, INVALID_FILE_SIZE};
+
+    // GetCompressedFileSizeW 是宽字符版本，需要以 NUL 结尾的 UTF-16 路径。
     let wide: Vec<u16> = path.as_os_str().encode_wide().chain(once(0)).collect();
     let mut high: u32 = 0;
-    // use std::ptr::null_mut;
-    // use winapi::um::fileapi::{CreateFileW, GetFileSize, OPEN_EXISTING};
-    // use winapi::um::winnt::{GENERIC_READ, FILE_SHARE_READ};
-    // use winapi::um::handleapi::INVALID_HANDLE_VALUE;
-    // let wide: Vec<u16> = path
-    //     .as_os_str()
-    //     .encode_wide()
-    //     .chain(Some(0).into_iter())
-    //     .collect();
-    // let handle = unsafe {
-    //     CreateFileW(
-    //         wide.as_ptr(),
-    //         GENERIC_READ,
-    //         FILE_SHARE_READ,
-    //         null_mut(),
-    //         OPEN_EXISTING,
-    //         0,
-    //         null_mut(),
-    //     )
-    // };
-    //
-    // if handle == INVALID_HANDLE_VALUE {
-    //     // handle 创建失败
-    //     let err = get_last_error();
-    //     if err != NO_ERROR {
-    //         return Err(std::io::Error::last_os_error().into());
-    //     }
-    // }
-    // let low = unsafe { GetFileSize(handle, &mut high) };
-
-    // GetCompressedFileSizeW 是宽字符版本的函数，用于操作 Unicode 字符集的字符串。
     let low = unsafe { GetCompressedFileSizeW(wide.as_ptr(), &mut high) };
 
     if low == INVALID_FILE_SIZE {
@@ -168,6 +146,7 @@ pub fn compressed_size(path: &Path) -> Result<u64, Box<dyn Error>> {
     Ok(u64::from(high) << 32 | u64::from(low))
 }
 
+/// 获取 Windows 最近一次错误码。
 #[cfg(windows)]
 pub fn get_last_error() -> u32 {
     use winapi::um::errhandlingapi::GetLastError;

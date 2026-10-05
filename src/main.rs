@@ -1,21 +1,25 @@
+//! 程序入口：解析参数、分析目标目录并渲染结果。
+
 use atty::Stream;
 use std::env;
 use std::error::Error;
 use structopt::StructOpt;
 use termcolor::{BufferWriter, ColorChoice};
 
-use mrdu::methods::show_disk_analyze_result;
-use mrdu::struct_define::analysis_item::AnalysisItem;
-use mrdu::struct_define::config::Arguments;
-use mrdu::struct_define::display_info::DisplayItemInfo;
-use mrdu::struct_define::file_info::FileInfo;
+use mrdu::analysis::AnalysisItem;
+use mrdu::args::Arguments;
+use mrdu::file_info::FileInfo;
+use mrdu::output::display_info::DisplayItemInfo;
+use mrdu::output::show_disk_analyze_result;
 
 fn main() -> Result<(), Box<dyn Error>> {
     let test_args = Arguments::from_args();
+    // 未指定目标目录时使用当前工作目录。
     let current_dir = env::current_dir()?;
     let target_dir = test_args.target_dir.as_ref().unwrap_or(&current_dir);
     let file_info = FileInfo::from_path(target_dir, test_args.apparent)?;
 
+    // 输出到终端时启用颜色，被重定向到文件/管道时禁用。
     let color_choice = if atty::is(Stream::Stdout) {
         ColorChoice::Auto
     } else {
