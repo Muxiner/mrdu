@@ -12,6 +12,7 @@
 - 添加 MIT 许可证。
 - 添加 `rustfmt.toml` 统一代码格式。
 - 添加 CI 的 `fmt`、`clippy` 检查任务。
+- 新增单元测试（大小格式化、占比计算、展示前缀与颜色）与覆盖各命令行选项及错误分支的端到端测试。
 - 本变更日志文件。
 
 ### Changed
@@ -20,6 +21,7 @@
   `struct_define`、`methods`，并将 `tree_shape`、`color` 拆分为独立文件。
 - 清理死代码（注释掉的旧实现、未使用的辅助函数与常量）。
 - 为公开模块与条目补充文档注释。
+- 移除不再使用的 `walkdir` 开发依赖。
 - 补充 `Cargo.toml` 元数据（`license`、`keywords`、`categories`、`rust-version`）。
 - 将仅用于测试的 `assert_cmd`、`walkdir` 移至 `[dev-dependencies]`。
 - 升级 GitHub Actions 至 `actions/checkout@v4` 与 `dtolnay/rust-toolchain`。
