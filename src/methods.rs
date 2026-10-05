@@ -20,7 +20,7 @@ pub fn show_disk_analyze_result(
     info: &DisplayItemInfo,
     buffer: &mut Buffer,
 ) -> io::Result<()> {
-    show_disk_analyze_item(item, &config, &info, buffer)?;
+    show_disk_analyze_item(item, config, info, buffer)?;
 
     if info.dir_level < config.max_depth {
         if let Some(children) = &item.children {

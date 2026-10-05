@@ -14,7 +14,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     let test_args = Arguments::from_args();
     let current_dir = env::current_dir()?;
     let target_dir = test_args.target_dir.as_ref().unwrap_or(&current_dir);
-    let file_info = FileInfo::from_path(&target_dir, test_args.apparent)?;
+    let file_info = FileInfo::from_path(target_dir, test_args.apparent)?;
 
     let color_choice = if atty::is(Stream::Stdout) {
         ColorChoice::Auto
@@ -30,7 +30,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     let start_time = std::time::Instant::now();
     let analysed = match file_info {
         FileInfo::Directory { volume_id } => {
-            AnalysisItem::analyze(&target_dir, test_args.apparent, volume_id)?
+            AnalysisItem::analyze(target_dir, test_args.apparent, volume_id)?
         }
         _ => return Err(format!("{} is not a directory!", target_dir.display()).into()),
     };
