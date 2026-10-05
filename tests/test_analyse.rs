@@ -84,17 +84,17 @@ mod test_analyse {
     fn test_no_args_analyse() -> Result<(), Box<dyn Error>> {
         let output = build_command(vec!["tests/test_file"]);
         // let target_dir = current_dir()?
-            // .join("tests/test_file")
-            // .to_str()
-            // .unwrap()
-            // .replace(r#"\"#, "/");
+        // .join("tests/test_file")
+        // .to_str()
+        // .unwrap()
+        // .replace(r#"\"#, "/");
         // let mut file_names =
-            // get_all_filename_dirname(&target_dir, 2).unwrap_or_else(|_| Vec::new());
+        // get_all_filename_dirname(&target_dir, 2).unwrap_or_else(|_| Vec::new());
         // file_names.push("test_file".to_string());
         // println!("{}", output);
         // for file_name in file_names {
-            // println!("{}", file_name);
-            // assert!(output.contains(&file_name));
+        // println!("{}", file_name);
+        // assert!(output.contains(&file_name));
         // }
         assert!(output.contains("Analyzing: tests/test_file"));
         assert!(output.contains("└──"));
@@ -129,8 +129,8 @@ mod test_analyse {
         // file_names.push("test_file".to_string());
         // println!("{}", output);
         // for file_name in file_names {
-            // println!("{}", file_name);
-            // assert!(output.contains(&file_name));
+        // println!("{}", file_name);
+        // assert!(output.contains(&file_name));
         // }
         assert!(output.contains("Analyzing: tests/test_file"));
         assert!(output.contains("└──"));

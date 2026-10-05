@@ -66,12 +66,7 @@ pub fn show_disk_analyze_item(
 ) -> io::Result<()> {
     // Indentation
     buffer.set_color(ColorSpec::new().set_fg(COLOR_GRAY))?;
-    write!(
-        buffer,
-        "{}{}",
-        info.prefix,
-        info.display_prefix(true)
-    )?;
+    write!(buffer, "{}{}", info.prefix, info.display_prefix(true))?;
     // Percentage
     buffer.set_color(ColorSpec::new().set_fg(info.display_color(false)))?;
     write!(

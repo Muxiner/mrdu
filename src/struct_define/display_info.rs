@@ -26,21 +26,19 @@ impl DisplayItemInfo {
             occupied_size,
             dir_level: self.dir_level + 1,
             is_last,
-            prefix: self.prefix.clone()
-                + self.display_prefix(false)
-                + &String::from("  "),
+            prefix: self.prefix.clone() + self.display_prefix(false) + &String::from("  "),
         }
     }
 
     pub fn display_prefix(&self, is_fork: bool) -> &'static str {
         match self.is_last {
             true => match is_fork {
-                true => tree_shape::LAST_LEAF,  // "└──"
+                true => tree_shape::LAST_LEAF, // "└──"
                 false => "  ",
             },
             false => match is_fork {
-                true => tree_shape::LEAF,       // "├──"
-                false => tree_shape::BRANCH,    // "│"
+                true => tree_shape::LEAF,    // "├──"
+                false => tree_shape::BRANCH, // "│"
             },
         }
     }
