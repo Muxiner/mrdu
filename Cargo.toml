@@ -30,7 +30,6 @@ strip = true
 [dependencies]
 structopt = "0.3.26"
 termcolor = "1.2.0"
-rayon = "1.6.1"
 atty = "0.2.14"
 
 [dev-dependencies]

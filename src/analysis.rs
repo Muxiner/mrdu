@@ -3,11 +3,11 @@
 //! 从根路径出发递归统计每个条目的磁盘占用，构建出一棵
 //! [`AnalysisItem`] 树，供输出层渲染。
 
-use rayon::prelude::{IntoParallelRefIterator, ParallelIterator};
 use std::error::Error;
 use std::ffi::OsStr;
-use std::fs;
+use std::fs::{self, DirEntry};
 use std::path::Path;
+use std::thread;
 
 use crate::file_info::FileInfo;
 
@@ -27,9 +27,20 @@ impl AnalysisItem {
     /// - `apparent` 透传给 [`FileInfo::from_path`]，决定大小统计口径。
     /// - `root_dev` 为根路径所在卷标识，用于阻止跨越文件系统边界。
     ///
-    /// 子目录通过 `rayon` 并行分析，结果按大小降序排列；无法读取的
-    /// 子条目会被忽略而非中断整次分析。
+    /// 仅对根路径的直接子项做一次并行划分（线程数不超过 CPU 核数），
+    /// 更深层递归串行执行，从而把总线程数控制在有限范围内。结果按大小
+    /// 降序排列；无法读取的子条目会被忽略而非中断整次分析。
     pub fn analyze(path: &Path, apparent: bool, root_dev: u64) -> Result<Self, Box<dyn Error>> {
+        Self::build(path, apparent, root_dev, true)
+    }
+
+    /// 核心递归实现；`parallel` 决定本层是否对子项做并行划分。
+    fn build(
+        path: &Path,
+        apparent: bool,
+        root_dev: u64,
+        parallel: bool,
+    ) -> Result<Self, Box<dyn Error>> {
         let name: String = path
             .file_name()
             .unwrap_or(OsStr::new("."))
@@ -49,12 +60,11 @@ impl AnalysisItem {
                     .filter_map(Result::ok)
                     .collect::<Vec<_>>();
 
-                let mut sub_items = sub_entries
-                    .par_iter()
-                    .filter_map(|entry| {
-                        AnalysisItem::analyze(&entry.path(), apparent, root_dev).ok()
-                    })
-                    .collect::<Vec<_>>();
+                let mut sub_items = if parallel {
+                    analyze_parallel(&sub_entries, apparent, root_dev)
+                } else {
+                    analyze_sequential(&sub_entries, apparent, root_dev)
+                };
 
                 sub_items.sort_unstable_by(|a, b| a.disk_size.cmp(&b.disk_size).reverse());
 
@@ -71,4 +81,37 @@ impl AnalysisItem {
             }),
         }
     }
+}
+
+/// 串行分析一批子项，忽略分析失败的条目。
+fn analyze_sequential(entries: &[DirEntry], apparent: bool, root_dev: u64) -> Vec<AnalysisItem> {
+    entries
+        .iter()
+        .filter_map(|entry| AnalysisItem::build(&entry.path(), apparent, root_dev, false).ok())
+        .collect()
+}
+
+/// 按 CPU 核数把子项切成若干块，每块起一个作用域线程串行递归。
+///
+/// 由于块内递归不再并行，整次分析的并发线程数受 CPU 核数约束。
+fn analyze_parallel(entries: &[DirEntry], apparent: bool, root_dev: u64) -> Vec<AnalysisItem> {
+    let workers = thread::available_parallelism()
+        .map(|n| n.get())
+        .unwrap_or(1)
+        .min(entries.len());
+    if workers <= 1 {
+        return analyze_sequential(entries, apparent, root_dev);
+    }
+
+    let chunk_size = (entries.len() + workers - 1) / workers;
+    thread::scope(|scope| {
+        let handles = entries
+            .chunks(chunk_size)
+            .map(|chunk| scope.spawn(move || analyze_sequential(chunk, apparent, root_dev)))
+            .collect::<Vec<_>>();
+        handles
+            .into_iter()
+            .flat_map(|handle| handle.join().unwrap())
+            .collect()
+    })
 }
