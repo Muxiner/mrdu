@@ -123,4 +123,4 @@ src/
 
 ## 许可
 
-本项目为个人学习/自用项目。作者：[Muxiner](https://github.com/Muxiner)。
+本项目基于 [MIT](./LICENSE) 许可证开源。作者：[Muxiner](https://github.com/Muxiner)。
